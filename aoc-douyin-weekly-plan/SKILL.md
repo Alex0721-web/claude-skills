@@ -118,6 +118,44 @@ description: >
 
 **目的**：不要凭空想选题，先从热点、低粉高赞、用户评论和竞品表现里找机会。
 
+#### ⚠️ 数据采集方式硬性规定（每次必须执行，不可跳过）
+
+**Step 1 的抖音平台数据必须通过 OpenCLI browser 从用户已登录的 Chrome 浏览器实时采集**，不得使用 WebSearch、WebFetch 或其他非平台原生方式代替。
+
+**原因**：
+- WebSearch 返回的是搜索引擎索引的过时/不完整数据，不是抖音平台实时数据
+- 抖音搜索页需登录态，只有 OpenCLI 能复用用户 Chrome 的已登录状态
+- 热榜热度值、搜索结果排序、评论区内容、视频AI章节要点等核心数据只有平台内直接采集才能拿到
+
+**操作方式**（OpenCLI browser 已安装并配置完成）：
+
+```bash
+# 1. 打开抖音热榜
+opencli browser douyin open “https://www.douyin.com/hot”
+opencli browser douyin wait time 3
+opencli browser douyin eval “JSON.stringify({title: document.title, hotList: Array.from(document.querySelectorAll('[class*=\”hot\”] li, [class*=\”rank\”] li, [class*=\”trend\”] li')).slice(0,30).map((el,i) => ({rank: i+1, text: el.textContent?.trim()?.substring(0,80)})) })”
+
+# 2. 搜索关键词（示例：”显示器收纳包”）
+opencli browser douyin open “https://www.douyin.com/search/显示器收纳包?type=video”
+opencli browser douyin wait time 5
+opencli browser douyin scroll down --amount 800
+opencli browser douyin wait time 2
+opencli browser douyin scroll down --amount 800
+opencli browser douyin wait time 2
+opencli browser douyin eval “JSON.stringify(Array.from(document.querySelectorAll('[class*=\”search\”] [class*=\”card\”], [class*=\”result\”] [class*=\”card\”], [class*=\”video\”] [class*=\”info\”]')).slice(0,20).map(el => ({text: el.textContent?.trim()?.substring(0,200)})))”
+
+# 3. 查看视频详情 + AI章节要点（如有高表现竞品视频）
+opencli browser douyin open “https://www.douyin.com/video/<video_id>”
+opencli browser douyin wait time 5
+opencli browser douyin scroll down --amount 600
+opencli browser douyin wait time 2
+opencli browser douyin eval “JSON.stringify({title: document.title, bodyPreview: document.body.innerText?.substring(0, 3000)})”
+```
+
+**如果 OpenCLI 不可用（daemon 未启动、扩展未连接等）**：先执行 `opencli doctor` 排查，按提示修复后再采集。不要跳过此步骤直接进入 WebSearch 降级。
+
+**仅在极端情况下（OpenCLI 经 doctor 确认无法修复）**：降级为基于已有行业经验、用户给的参考链接、历史产品记忆和可用网络信息生成”选题情报草案”，并明确标注「⚠️ 未采集实时抖音数据，基于历史数据生成」。
+
 **投影仪默认关键词池**：投影仪、卧室投影仪、租房党投影仪、学生党投影仪、家庭影院、卧室改造、宿舍好物、卧室好物、周末宅家、千元投影仪、AOC投影仪
 
 **箱包默认关键词池**：电脑包、通勤背包、电竞背包、游戏本背包、数码收纳包、显示器收纳包、显示器搬运、外设收纳、出差背包、学生党电脑包、短途差旅包、同价位游戏本背包、电竞品牌背包、AOC AGON箱包
@@ -129,7 +167,7 @@ description: >
 4. 适合AOC当前产品线的选题机会
 5. 哪些选题更适合引流、种草信任、促单
 
-如果环境无法完整采集抖音数据，则降级为：基于已有行业经验、用户给的参考链接、历史产品记忆和可用网络信息生成“选题情报草案”，并明确说明数据采集限制。
+~~如果环境无法完整采集抖音数据，则降级为：基于已有行业经验、用户给的参考链接、历史产品记忆和可用网络信息生成”选题情报草案”，并明确说明数据采集限制。~~
 
 ### Step 2：按三条漏斗结构输出基础方向
 
